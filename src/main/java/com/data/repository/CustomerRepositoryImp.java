@@ -1,7 +1,9 @@
 package com.data.repository;
 
 import com.data.entity.Customer;
+import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -28,11 +30,37 @@ public class CustomerRepositoryImp implements CustomerRepository {
             return false;
         }
     }
+//      try (Session session = sessionFactory.openSession()) {
+//        Transaction tx = session.beginTransaction();
+//        ProductCart cart = session.get(ProductCart.class, cartId);
+//        if (cart != null) {
+//            cart.setQuantity(quantity);
+//            session.update(cart);
+//            tx.commit();
+//            return true;
+//        }
+//        return false;
+//    } catch (Exception e) {
+//        e.printStackTrace();
+//        return false;
+//    }
     @Override
     public boolean updateCustomer(Customer customer) {
-        try {
-            sessionFactory.openSession().update(customer);
-            return true;
+        try (Session session = sessionFactory.openSession()) {
+            Transaction tx = session.beginTransaction();
+            Customer customers = session.get(Customer.class, customer.getId());
+            if (customers != null) {
+                customers.setFirstName(customer.getFirstName());
+                customers.setLastName(customer.getLastName());
+                customers.setEmail(customer.getEmail());
+                customers.setPhone(customer.getPhone());
+                customers.setAddress(customer.getAddress());
+                customers.setFileImage(String.valueOf(customer.getFileImage()));
+                session.update(customers);
+                tx.commit();
+                return true;
+            }
+            return false;
         } catch (Exception e) {
             e.printStackTrace();
             return false;
@@ -40,10 +68,12 @@ public class CustomerRepositoryImp implements CustomerRepository {
     }
     @Override
     public boolean deleteCustomer(int id) {
-        try {
-            Customer customer = sessionFactory.openSession().get(Customer.class, id);
-            if (customer != null) {
-                sessionFactory.openSession().delete(customer);
+        try (Session session = sessionFactory.openSession()) {
+            Transaction tx = session.beginTransaction();
+            Customer c = session.get(Customer.class, id);
+            if (c != null) {
+                session.delete(c);
+                tx.commit();
                 return true;
             }
             return false;
